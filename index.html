@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Translator</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for a bit of polish */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .file-input-button {
+            cursor: pointer;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .file-input-button:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .pdf-preview-frame {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+        }
+    </style>
+    <!-- Google Fonts for a nicer look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-800 flex items-center justify-center min-h-screen py-8">
+
+    <div class="w-full max-w-7xl mx-auto p-4 md:p-8">
+        <div class="bg-white rounded-xl shadow-lg p-6 md:p-10">
+            
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">PDF Document Translator</h1>
+                <p class="mt-2 text-gray-600">Upload a PDF, and get a translated version side-by-side.</p>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="max-w-xl mx-auto">
+                <form id="upload-form" class="space-y-6">
+                    <!-- File Input -->
+                    <div>
+                        <label for="file-upload" class="sr-only">Choose file</label>
+                        <input type="file" id="file-upload" class="hidden" accept=".pdf">
+                        <label for="file-upload" class="file-input-button w-full flex items-center justify-center px-6 py-4 bg-gray-100 text-gray-700 rounded-lg border-2 border-dashed border-gray-300">
+                            <svg class="w-8 h-8 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V6a4 4 0 014-4h1.586A3 3 0 0112.586 3L14 5h4a2 2 0 012 2v1.5M12 18a3 3 0 003-3V9m-6 0v6a3 3 0 003 3z"></path></svg>
+                            <span id="file-name" class="font-medium">Click to choose a PDF file</span>
+                        </label>
+                    </div>
+
+                    <!-- Language Selection -->
+                     <div>
+                        <label for="language-select" class="block text-sm font-medium text-gray-700 mb-2">Translate to:</label>
+                        <select id="language-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option>Hindi</option>
+                            <option>Spanish</option>
+                            <option>French</option>
+                            <option>German</option>
+                            <option>Japanese</option>
+                            <option>Arabic</option>
+                        </select>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="translate-button" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-all duration-300">
+                        Translate PDF
+                    </button>
+                </form>
+            </div>
+
+            <!-- Status/Result Area -->
+            <div id="status-area" class="mt-8 text-center hidden">
+                <!-- Loading Spinner -->
+                <div id="loading-indicator" class="flex items-center justify-center space-x-2">
+                    <svg class="animate-spin h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-gray-600 font-medium">Translating your document... This may take a moment.</span>
+                </div>
+                <!-- Error Message -->
+                <div id="error-message" class="hidden p-4 bg-red-100 text-red-700 rounded-lg"></div>
+            </div>
+            
+            <!-- PDF Preview & Download Area -->
+            <div id="result-area" class="hidden mt-10">
+                <div class="text-center mb-6">
+                    <a id="download-button" href="#" download="translated.pdf" class="inline-block bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all duration-300">
+                        Download Translated PDF
+                    </a>
+                </div>
+
+                <!-- Side-by-side Preview -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Original PDF Preview -->
+                    <div>
+                        <h2 class="text-xl font-bold text-center mb-3">Original</h2>
+                        <iframe id="original-pdf-preview" class="pdf-preview-frame w-full h-[700px]" title="Original PDF Preview"></iframe>
+                    </div>
+                    <!-- Translated PDF Preview -->
+                    <div>
+                        <h2 class="text-xl font-bold text-center mb-3">Translated</h2>
+                        <iframe id="translated-pdf-preview" class="pdf-preview-frame w-full h-[700px]" title="Translated PDF Preview"></iframe>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const uploadForm = document.getElementById('upload-form');
+        const translateButton = document.getElementById('translate-button');
+        const fileInput = document.getElementById('file-upload');
+        const fileNameDisplay = document.getElementById('file-name');
+        const languageSelect = document.getElementById('language-select');
+        
+        const statusArea = document.getElementById('status-area');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const errorMessage = document.getElementById('error-message');
+        
+        const resultArea = document.getElementById('result-area');
+        const originalPdfPreview = document.getElementById('original-pdf-preview');
+        const translatedPdfPreview = document.getElementById('translated-pdf-preview');
+        const downloadButton = document.getElementById('download-button');
+
+        // Store blob URLs to revoke them later and prevent memory leaks
+        let originalPdfUrl = null;
+        let translatedPdfUrl = null;
+
+        // Update file name display when a file is chosen
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = fileInput.files[0].name;
+            } else {
+                fileNameDisplay.textContent = 'Click to choose a PDF file';
+            }
+        });
+
+        // Handle form submission
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!fileInput.files.length) {
+                alert('Please select a PDF file first.');
+                return;
+            }
+
+            // --- UI Updates: Show loading state ---
+            translateButton.disabled = true;
+            statusArea.classList.remove('hidden');
+            loadingIndicator.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            resultArea.classList.add('hidden');
+
+            // --- Revoke old URLs to free up memory ---
+            if (originalPdfUrl) URL.revokeObjectURL(originalPdfUrl);
+            if (translatedPdfUrl) URL.revokeObjectURL(translatedPdfUrl);
+
+            // --- Display Original PDF Preview Immediately ---
+            const originalFile = fileInput.files[0];
+            originalPdfUrl = URL.createObjectURL(originalFile);
+            originalPdfPreview.src = originalPdfUrl;
+
+            // --- Prepare data for backend ---
+            const formData = new FormData();
+            formData.append('file', originalFile);
+            
+            const selectedLanguage = languageSelect.value;
+            // The backend URL. Make sure your FastAPI server is running.
+            const apiUrl = `http://127.0.0.1:8000/translate-pdf/?target_language=${encodeURIComponent(selectedLanguage)}`;
+
+            try {
+                // --- API Call ---
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    // If response is not OK, try to read the error detail from the backend
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP error! Status: ${response.status}`);
+                }
+
+                // --- Handle successful response ---
+                const pdfBlob = await response.blob();
+                translatedPdfUrl = URL.createObjectURL(pdfBlob);
+
+                // Update UI to show results
+                translatedPdfPreview.src = translatedPdfUrl;
+                downloadButton.href = translatedPdfUrl;
+                downloadButton.download = `translated-${originalFile.name}`;
+
+                resultArea.classList.remove('hidden');
+
+            } catch (error) {
+                // --- Handle errors ---
+                console.error('Translation failed:', error);
+                errorMessage.textContent = `Error: ${error.message}`;
+                errorMessage.classList.remove('hidden');
+            } finally {
+                // --- UI Cleanup: Hide loading state ---
+                translateButton.disabled = false;
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
